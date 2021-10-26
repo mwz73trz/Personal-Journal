@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'journal_auth',
+    'journal_app',
 ]
 
 MIDDLEWARE = [
