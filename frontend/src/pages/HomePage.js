@@ -1,8 +1,6 @@
 import { Component } from "react";
-import { Link } from "react-router-dom";
 import journalAPI from "../api/journalAPI";
 import Journals from "../components/Journals";
-import UserContext from "../contexts/UserContext";
 
 class HomePage extends Component {
   state = {
@@ -11,10 +9,39 @@ class HomePage extends Component {
 
   getJournals = async () => {
     try {
-      let token = this.context ? this.context.token : null;
-      if (token) {
-        let journalData = await journalAPI.getJournals(token);
-        this.setState({ journals: journalData });
+      let journalData = await journalAPI.getJournals();
+      this.setState({ journals: journalData });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  createJournal = async () => {
+    let inputTitle = document.getElementById("new-journal-title");
+    let inputDescription = document.getElementById("new-journal-description");
+    if (inputTitle && inputDescription) {
+      let newJournalParams = {
+        title: inputTitle.value,
+        description: inputDescription.value,
+      };
+      let data = await journalAPI.createJournal(newJournalParams);
+      if (data) {
+        let newJournals = [...this.state.journals, data];
+        this.setState({ journals: newJournals });
+      }
+    }
+  };
+
+  deleteJournal = async (journalId) => {
+    try {
+      if (journalId > 0) {
+        let result = await journalAPI.deleteJournal(journalId);
+        if (result.success) {
+          let newJournals = this.state.journals.filter((journal, index) => {
+            return journal.id !== journalId;
+          });
+          this.setState({ journals: newJournals });
+        }
       }
     } catch (error) {
       console.log(error);
@@ -26,27 +53,24 @@ class HomePage extends Component {
   }
 
   renderWelcome() {
-    if (!this.context) {
-      return (
-        <Link to="/login">
-          <button>Login</button>
-        </Link>
-      );
-    }
     let journalElements = this.state.journals.map((journal, index) => {
       return (
         <li key={`journal-${index}`}>
-          <Journals journal={journal} />
+          <Journals journal={journal} handleDelete={this.deleteJournal} />
         </li>
       );
     });
     return (
       <div>
-        <h2>Welcome to Your Journal App {this.context.user.username}</h2>
+        <h2>Welcome to Your Journal App</h2>
         <h2>Journals</h2>
         <ul className="simple-list" style={{ listStyle: "none" }}>
           {journalElements}
         </ul>
+        <hr />
+        <input id="new-journal-title" placeholder="new title" />
+        <input id="new-journal-description" placeholder="new description" />
+        <button onClick={this.createJournal}>Add Journal Entry</button>
       </div>
     );
   }
@@ -60,7 +84,5 @@ class HomePage extends Component {
     );
   }
 }
-
-HomePage.contextType = UserContext;
 
 export default HomePage;
